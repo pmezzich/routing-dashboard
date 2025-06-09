@@ -1,95 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prebid Request Dashboard</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 30px;
-      background: #f9f9f9;
-      text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-    }
-
-    #toggle {
-      margin: 20px auto;
-    }
-
-    .request {
-      margin: 10px auto;
-      padding: 10px;
-      border: 1px solid #ccc;
-      background: white;
-      width: 80%;
-      border-radius: 6px;
-      text-align: left;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    label {
-      font-weight: bold;
-      margin: 0 15px;
-    }
-
-    input[type="radio"] {
-      transform: scale(1.2);
-      margin-right: 5px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Prebid Request Dashboard</h1>
+  <div class="container">
+    <h1>Prebid Request Dashboard</h1>
 
-  <div id="toggle">
-    <label>
-      <input type="radio" name="filter" value="member" checked> Member Requests
-    </label>
-    <label>
-      <input type="radio" name="filter" value="non-member"> Non-Member Requests
-    </label>
+    <div class="toggle-container">
+      <button class="toggle-button active" onclick="showRequests('member')">Members</button>
+      <button class="toggle-button" onclick="showRequests('non-member')">Non-Members</button>
+    </div>
+
+    <div id="requests"></div>
   </div>
 
-  <div id="requests"></div>
-
   <script>
-    let requests = [];
+    let currentView = 'member';
 
-    fetch("requests.json")
-      .then(response => response.json())
-      .then(data => {
-        requests = data;
-        render("member");
-      });
-
-    function render(filter) {
-      const container = document.getElementById("requests");
-      container.innerHTML = "";
-      requests
-        .filter(r => r.status === filter)
-        .forEach(r => {
-          const div = document.createElement("div");
-          div.className = "request";
-          div.innerHTML = `
-            <strong>Company:</strong> ${r.company}<br>
-            <strong>Title:</strong> <a href="${r.url}" target="_blank">${r.title}</a><br>
-            <strong>Submitted by:</strong> ${r.author}<br>
-            <strong>Date:</strong> ${new Date(r.timestamp).toLocaleString()}
-          `;
-          container.appendChild(div);
+    function loadRequests() {
+      fetch('requests.json')
+        .then(response => response.json())
+        .then(data => {
+          window.requestsData = data;
+          renderRequests();
         });
     }
 
-    document.querySelectorAll('input[name="filter"]').forEach(radio => {
-      radio.addEventListener("change", () => render(radio.value));
-    });
+    function renderRequests() {
+      const container = document.getElementById('requests');
+      container.innerHTML = '';
+
+      const filtered = window.requestsData.filter(r => r.status === currentView);
+
+      filtered.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <h2>
+            <a href="${entry.url}" target="_blank">${entry.title}</a>
+            <span class="status ${entry.status}">${entry.status.replace('-', ' ')}</span>
+          </h2>
+          <p><strong>Author:</strong> ${entry.author}</p>
+          <p><strong>Company:</strong> ${entry.company}</p>
+          <p class="timestamp">Submitted: ${new Date(entry.timestamp).toLocaleString()}</p>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function showRequests(type) {
+      currentView = type;
+      document.querySelectorAll('.toggle-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.toggle-button')[type === 'member' ? 0 : 1].classList.add('active');
+      renderRequests();
+    }
+
+    loadRequests();
   </script>
 </body>
 </html>
