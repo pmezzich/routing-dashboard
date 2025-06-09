@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prebid Dashboard</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="scripts.js"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="sidebar">
+      <div class="logo"><h2>Prebid Analytics</h2></div>
+      <div class="nav-item active" data-page="dashboard">Dashboard</div>
+      <div class="nav-item" data-page="member-search">Members</div>
+      <div class="nav-item" onclick="window.location.href='analytics.html'">Analytics</div>
+      <div class="nav-item" id="settings-button">Settings</div>
+    </div>
+    <div class="header">
+      <h1>Prebid Request Dashboard</h1>
+      <div class="header-actions">
+        <input type="text" id="search-input" placeholder="Search requests..."/>
+        <button id="refresh-button">⟳</button>
+      </div>
+    </div>
+    <div class="main-content">
+      <div id="requests-container"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+    <div class="footer">Prebid Request Dashboard © 2025</div>
+  </div>
+
+  <!-- Popups -->
+  <div class="popup" id="settings-popup">
+    <h3>Settings</h3>
+    <p>No settings yet.</p>
+    <button onclick="closePopup('settings-popup')">Close</button>
+  </div>
+  <div class="popup" id="member-popup">
+    <h3>Search by Member</h3>
+    <input type="text" id="member-search-input" placeholder="Enter company name..."/>
+    <button onclick="searchByMember()">Search</button>
+    <button onclick="closePopup('member-popup')">Close</button>
+  </div>
+</body>
+</html>
