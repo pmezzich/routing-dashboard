@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prebid Request Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #7209b7;
+      --success: #06d6a0;
+      --danger: #ef476f;
+      --warning: #ffd166;
+      --dark: #2b2d42;
+      --light: #f8f9fa;
+      --gray: #8d99ae;
+      --card-bg: #ffffff;
+      --card-shadow: rgba(149, 157, 165, 0.15);
+      --header-gradient: linear-gradient(135deg, #4361ee, #3a0ca3);
+      --sidebar-bg: #2b2d42;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      color: #333;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .header {
+      grid-column: 2 / 3;
+      background: var(--header-gradient);
+      color: white;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50px;
+      padding: 0.5rem 1rem;
+      width: 300px;
+      transition: var(--transition);
+    }
+
+    .search-container:focus-within {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
+
+    .search-container input {
+      background: transparent;
+      border: none;
+      color: white;
+      padding: 0.5rem;
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    .search-container input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .search-container i {
+      margin-right: 0.5rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .refresh-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+
+    .refresh-btn.loading {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Sidebar styles */
+    .sidebar {
+      grid-row: 1 / 3;
+      background: var(--sidebar-bg);
+      color: white;
+      padding: 2rem 1rem;
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      padding: 0 1rem;
+    }
+
+    .logo i {
+      font-size: 2rem;
+      margin-right: 0.75rem;
+      color: var(--primary);
+    }
+
+    .logo h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 0.9rem 1.5rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-item i {
+      margin-right: 1rem;
+      font-size: 1.2rem;
+      width: 24px;
+      text-align: center;
+    }
+    
+
+    /* Main content styles */
+    .main-content {
+      padding: 2rem;
+      grid-column: 2 / 3;
+    }
+
+    /* Stats overview */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--header-gradient);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-card .icon-1 { background: rgba(67, 97, 238, 0.15); color: var(--primary); }
+    .stat-card .icon-2 { background: rgba(239, 71, 111, 0.15); color: var(--danger); }
+    .stat-card .icon-3 { background: rgba(6, 214, 160, 0.15); color: var(--success); }
+    .stat-card .icon-4 { background: rgba(255, 209, 102, 0.15); color: var(--warning); }
+
+    .stat-card h3 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card p {
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    .stat-trend {
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .stat-trend.up {
+      color: var(--success);
+    }
+
+    .stat-trend.down {
+      color: var(--danger);
+    }
+
+    /* Toggle styles */
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .toggle-button {
+      padding: 12px 28px;
+      border: none;
+      background: #e9ecef;
+      color: var(--dark);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      margin: 0 8px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .toggle-button i {
+      margin-right: 8px;
+    }
+
+    .toggle-button.active,
+    .toggle-button:hover {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    /* Card styles */
+    .requests-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px var(--card-shadow);
+      transition: var(--transition);
+      border-left: 4px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--header-gradient);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card h2 {
+      font-size: 1.3rem;
+      color: var(--dark);
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .card a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .card a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .card p {
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .card p i {
+      width: 24px;
+      color: var(--gray);
+      margin-right: 8px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 12px;
+    }
+
+    .status.member {
+      background: rgba(6, 214, 160, 0.15);
+      color: var(--success);
+    }
+
+    .status.non-member {
+      background: rgba(239, 71, 111, 0.15);
+      color: var(--danger);
+    }
+
+    .status i {
+      margin-right: 5px;
+    }
+
+    .timestamp {
+      font-size: 0.85rem;
+      color: var(--gray);
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .timestamp i {
+      margin-right: 8px;
+    }
+
+    /* Footer */
+    .footer {
+      grid-column: 1 / 3;
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive design */
+    @media (max-width: 992px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        grid-row: auto;
+        grid-column: 1 / 3;
+      }
+      
+      .header, .main-content {
+        grid-column: 1 / 3;
+      }
+      
+      .requests-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+      
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .search-container {
+        width: 100%;
+      }
+      
+      .stats-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .toggle-container {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .toggle-button {
+        width: 100%;
+        margin: 0;
+      }
+    }
+    
+    /* Chat Bot Styles */
+    #chat-bot {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      height: 420px;
+      background: white;
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      z-index: 1000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    #chat-bot.minimized {
+      height: 40px;
+    }
+    
+    #chat-header {
+      background: var(--header-gradient);
+      color: white;
+      padding: 12px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #chat-header i {
+      font-size: 1.1rem;
+    }
+    
+    #chat-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 10px;
+      overflow: hidden;
+    }
+    
+    #chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 8px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      padding: 8px 12px;
+      border-radius: 16px;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .user-message {
+      background: var(--primary);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .bot-message {
+      background: #e9ecef;
+      color: var(--dark);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #chat-input-area {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    #chat-input {
+      flex-grow: 1;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    #chat-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
+    
+    #send-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    #send-button:hover {
+      background: var(--primary-dark);
+    }
+    
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #e9ecef;
+      border-radius: 16px;
+      align-self: flex-start;
+      margin-top: 5px;
+    }
+    
+    .typing-indicator span {
+      height: 8px;
+      width: 8px;
+      border-radius: 50%;
+      background: var(--gray);
+      display: inline-block;
+      margin: 0 2px;
+      animation: typing 1s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--primary);
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="logo">
+        <i class="fas fa-chart-network"></i>
+        <h2>Prebid Analytics</h2>
+      </div>
+      
+      <div class="nav-item active">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-file-alt"></i>
+        <span>Requests</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-chart-bar"></i>
+        <span>Analytics</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Members</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </div>
+    </div>
+    
+    <!-- Header -->
+    <div class="header">
+      <h1>Prebid Request Dashboard</h1>
+      <div class="header-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search requests..." id="search-input">
+        </div>
+        <button class="refresh-btn" id="refresh-button">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Stats Overview -->
+      <div class="stats-container">
+        <div class="stat-card">
+          <i class="fas fa-file-alt icon-1"></i>
+          <h3 id="total-requests">0</h3>
+          <p>Total Requests</p>
+          <div class="stat-trend up">
+            <i class="fas fa-arrow-up"></i>
+            <span id="daily-growth">0%</span> today
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-user-check icon-2"></i>
+          <h3 id="member-requests">0</h3>
+          <p>Member Requests</p>
+          <div class="stat-trend up">
+            <i class="fas fa-arrow-up"></i>
+            <span id="member-percentage">0%</span> of total
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-user-times icon-3"></i>
+          <h3 id="non-member-requests">0</h3>
+          <p>Non-Member Requests</p>
+          <div class="stat-trend down">
+            <i class="fas fa-arrow-down"></i>
+            <span id="non-member-percentage">0%</span> of total
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-building icon-4"></i>
+          <h3 id="unique-companies">0</h3>
+          <p>Unique Companies</p>
+          <div class="stat-trend up">
+            <i class="fas fa-arrow-up"></i>
+            <span id="company-growth">0%</span> growth
+          </div>
+        </div>
+      </div>
+      
+      <!-- Toggle Buttons -->
+      <div class="toggle-container">
+        <button class="toggle-button active" onclick="showRequests('member')">
+          <i class="fas fa-user-check"></i> Members
+        </button>
+        <button class="toggle-button" onclick="showRequests('non-member')">
+          <i class="fas fa-user-times"></i> Non-Members
+        </button>
+      </div>
+      
+      <!-- Requests Container -->
+      <div class="requests-container" id="requests">
+        <div class="spinner" id="requests-spinner"></div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p>Prebid Request Dashboard &copy; 2023 | Auto-updating stats | Last refreshed: <span id="last-refresh">Never</span></p>
+    </div>
+  </div>
+
+  <!-- Chat Bot -->
+  <div id="chat-bot">
+    <div id="chat-header">
+      <span>Ask PrebidBot 🤖</span>
+      <i class="fas fa-minus" id="toggle-chat"></i>
+    </div>
+    <div id="chat-body">
+      <div id="chat-messages">
+        <div class="message bot-message">
+          Hello! I'm PrebidBot, your Prebid assistant. How can I help you today?
+        </div>
+        <div class="message bot-message">
+          You can ask me about requests, members, analytics, or anything related to Prebid.
+        </div>
+      </div>
+      <div id="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Ask a question about Prebid..." />
+        <button id="send-button">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Store the last request count for growth calculation
+    let lastRequestCount = 0;
+    let lastUniqueCompanies = 0;
+    let requestsData = [];
+    let currentView = 'member';
+    
+    // Initialize dashboard
+    function initDashboard() {
+      loadRequests();
+      
+      // Set up auto-refresh every 30 seconds
+      setInterval(() => {
+        document.getElementById('refresh-button').classList.add('loading');
+        loadRequests();
+      }, 30000);
+      
+      // Add event listeners
+      document.getElementById('refresh-button').addEventListener('click', function() {
+        this.classList.add('loading');
+        loadRequests();
+      });
+      
+      document.getElementById('search-input').addEventListener('input', function() {
+        filterRequests(this.value);
+      });
+      
+      // Add active state to nav items
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+      
+      // Initialize chat bot
+      initChatBot();
+    }
+    
+    // Load requests from JSON file
+    function loadRequests() {
+      document.getElementById('requests-spinner').style.display = 'block';
+      
+      fetch('requests.json')
+        .then(response => response.json())
+        .then(data => {
+          requestsData = data;
+          updateStats(data);
+          renderRequests();
+          document.getElementById('refresh-button').classList.remove('loading');
+          document.getElementById('last-refresh').textContent = new Date().toLocaleString();
+          document.getElementById('requests-spinner').style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Error loading requests:', error);
+          document.getElementById('refresh-button').classList.remove('loading');
+          document.getElementById('requests-spinner').style.display = 'none';
+          document.getElementById('requests').innerHTML = `
+            <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef476f; margin-bottom: 1rem;"></i>
+              <h3>Failed to load requests</h3>
+              <p>Please try refreshing the page or check your connection</p>
+            </div>
+          `;
+        });
+    }
+    
+    // Update statistics based on request data
+    function updateStats(data) {
+      const totalRequests = data.length;
+      const memberRequests = data.filter(r => r.status === 'member').length;
+      const nonMemberRequests = data.filter(r => r.status === 'non-member').length;
+      
+      // Get unique companies
+      const uniqueCompanies = [...new Set(data.map(item => item.company))].length;
+      
+      // Update DOM elements
+      document.getElementById('total-requests').textContent = totalRequests;
+      document.getElementById('member-requests').textContent = memberRequests;
+      document.getElementById('non-member-requests').textContent = nonMemberRequests;
+      document.getElementById('unique-companies').textContent = uniqueCompanies;
+      
+      // Calculate percentages
+      document.getElementById('member-percentage').textContent = 
+        totalRequests > 0 ? Math.round((memberRequests / totalRequests) * 100) + '%' : '0%';
+      
+      document.getElementById('non-member-percentage').textContent = 
+        totalRequests > 0 ? Math.round((nonMemberRequests / totalRequests) * 100) + '%' : '0%';
+      
+      // Calculate growth percentages
+      if (lastRequestCount > 0) {
+        const dailyGrowth = Math.round(((totalRequests - lastRequestCount) / lastRequestCount) * 100);
+        document.getElementById('daily-growth').textContent = dailyGrowth + '%';
+        document.querySelector('#daily-growth').closest('.stat-trend').className = 
+          `stat-trend ${dailyGrowth >= 0 ? 'up' : 'down'}`;
+      }
+      
+      if (lastUniqueCompanies > 0) {
+        const companyGrowth = Math.round(((uniqueCompanies - lastUniqueCompanies) / lastUniqueCompanies) * 100);
+        document.getElementById('company-growth').textContent = companyGrowth + '%';
+        document.querySelector('#company-growth').closest('.stat-trend').className = 
+          `stat-trend ${companyGrowth >= 0 ? 'up' : 'down'}`;
+      }
+      
+      // Update last counts
+      lastRequestCount = totalRequests;
+      lastUniqueCompanies = uniqueCompanies;
+    }
+    
+    // Render requests based on current view
+    function renderRequests() {
+      const container = document.getElementById('requests');
+      container.innerHTML = '';
+      
+      const filtered = requestsData.filter(r => r.status === currentView);
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <i class="fas fa-inbox" style="font-size: 3rem; color: #8d99ae; margin-bottom: 1rem;"></i>
+            <h3>No requests found</h3>
+            <p>Try changing your filters or check back later</p>
+          </div>
+        `;
+        return;
+      }
+      
+      filtered.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        // Calculate how recent the request is
+        const daysAgo = Math.floor((new Date() - new Date(entry.timestamp)) / (1000 * 60 * 60 * 24));
+        const isNew = daysAgo < 1;
+        
+        card.innerHTML = `
+          <h2>
+            <a href="${entry.url}" target="_blank">${entry.title}</a>
+            ${isNew ? '<span style="background:#06d6a0; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem; margin-left:8px;">NEW</span>' : ''}
+            <span class="status ${entry.status}">
+              <i class="fas ${entry.status === 'member' ? 'fa-user-check' : 'fa-user-times'}"></i>
+              ${entry.status.replace('-', ' ')}
+            </span>
+          </h2>
+          <p><i class="fas fa-user"></i><strong>Author:</strong> ${entry.author}</p>
+          <p><i class="fas fa-building"></i><strong>Company:</strong> ${entry.company}</p>
+          <p><i class="fas fa-tag"></i><strong>Category:</strong> ${entry.category || 'General'}</p>
+          <p class="timestamp">
+            <i class="fas fa-clock"></i>
+            Submitted: ${new Date(entry.timestamp).toLocaleString()}
+          </p>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+    
+    // Filter requests based on search input
+    function filterRequests(searchTerm) {
+      const container = document.getElementById('requests');
+      const cards = container.getElementsByClassName('card');
+      const term = searchTerm.toLowerCase();
+      
+      for (let card of cards) {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(term) ? 'block' : 'none';
+      }
+    }
+    
+    function showRequests(type) {
+      currentView = type;
+      document.querySelectorAll('.toggle-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.toggle-button')[type === 'member' ? 0 : 1].classList.add('active');
+      renderRequests();
+    }
+    
+    // Chat Bot Functionality
+    function initChatBot() {
+      const chatBot = document.getElementById('chat-bot');
+      const toggleChat = document.getElementById('toggle-chat');
+      const sendButton = document.getElementById('send-button');
+      const chatInput = document.getElementById('chat-input');
+      const chatMessages = document.getElementById('chat-messages');
+      
+      // Toggle chat window
+      toggleChat.addEventListener('click', () => {
+        chatBot.classList.toggle('minimized');
+        toggleChat.classList.toggle('fa-minus');
+        toggleChat.classList.toggle('fa-expand');
+      });
+      
+      // Send message on button click
+      sendButton.addEventListener('click', sendChat);
+      
+      // Send message on Enter key
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendChat();
+        }
+      });
+    }
+    
+    async function sendChat() {
+      const chatInput = document.getElementById('chat-input');
+      const message = chatInput.value.trim();
+      if (!message) return;
+      
+      const chatMessages = document.getElementById('chat-messages');
+      
+      // Add user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'message user-message';
+      userMessage.textContent = message;
+      chatMessages.appendChild(userMessage);
+      
+      // Clear input
+      chatInput.value = '';
+      
+      // Show typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'typing-indicator';
+      typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+      chatMessages.appendChild(typingIndicator);
+      
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      try {
+        // Send message to backend
+        const res = await fetch("https://routing-dashboard-backend.onrender.com/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to get response from server');
+        }
+        
+        const data = await res.json();
+        
+        // Remove typing indicator
+        typingIndicator.remove();
+        
+        // Add bot response
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot-message';
+        botMessage.textContent = data.reply;
+        chatMessages.appendChild(botMessage);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+      } catch (error) {
+        console.error('Chat error:', error);
+        typingIndicator.remove();
+        
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message bot-message';
+        errorMessage.textContent = "Sorry, I'm having trouble connecting to the chat service. Please try again later.";
+        chatMessages.appendChild(errorMessage);
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    }
+    
+    // Initialize the dashboard when page loads
+    window.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+
+<!-- Chatbot Widget Start -->
+<style>
+  #chatbot-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  #chatbot-frame {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    border: none;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  }
+</style>
+
+<button id="chatbot-button">💬</button>
+<iframe id="chatbot-frame" src="https://routing-dashboard-backend.onrender.com/chat"></iframe>
+
+<script>
+  const button = document.getElementById('chatbot-button');
+  const frame = document.getElementById('chatbot-frame');
+  button.onclick = () => {
+    frame.style.display = frame.style.display === 'none' ? 'block' : 'none';
+  };
+</script>
+<!-- Chatbot Widget End -->
+
+</body>
+</html>
