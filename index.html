@@ -465,6 +465,177 @@
         margin: 0;
       }
     }
+    
+    /* Chat Bot Styles */
+    #chat-bot {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      height: 420px;
+      background: white;
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      z-index: 1000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    #chat-bot.minimized {
+      height: 40px;
+    }
+    
+    #chat-header {
+      background: var(--header-gradient);
+      color: white;
+      padding: 12px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #chat-header i {
+      font-size: 1.1rem;
+    }
+    
+    #chat-body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 10px;
+      overflow: hidden;
+    }
+    
+    #chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 8px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      padding: 8px 12px;
+      border-radius: 16px;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .user-message {
+      background: var(--primary);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .bot-message {
+      background: #e9ecef;
+      color: var(--dark);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #chat-input-area {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    #chat-input {
+      flex-grow: 1;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    #chat-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    }
+    
+    #send-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    #send-button:hover {
+      background: var(--primary-dark);
+    }
+    
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #e9ecef;
+      border-radius: 16px;
+      align-self: flex-start;
+      margin-top: 5px;
+    }
+    
+    .typing-indicator span {
+      height: 8px;
+      width: 8px;
+      border-radius: 50%;
+      background: var(--gray);
+      display: inline-block;
+      margin: 0 2px;
+      animation: typing 1s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes typing {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--primary);
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -565,7 +736,9 @@
       </div>
       
       <!-- Requests Container -->
-      <div class="requests-container" id="requests"></div>
+      <div class="requests-container" id="requests">
+        <div class="spinner" id="requests-spinner"></div>
+      </div>
     </div>
     
     <!-- Footer -->
@@ -574,10 +747,36 @@
     </div>
   </div>
 
+  <!-- Chat Bot -->
+  <div id="chat-bot">
+    <div id="chat-header">
+      <span>Ask PrebidBot 🤖</span>
+      <i class="fas fa-minus" id="toggle-chat"></i>
+    </div>
+    <div id="chat-body">
+      <div id="chat-messages">
+        <div class="message bot-message">
+          Hello! I'm PrebidBot, your Prebid assistant. How can I help you today?
+        </div>
+        <div class="message bot-message">
+          You can ask me about requests, members, analytics, or anything related to Prebid.
+        </div>
+      </div>
+      <div id="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Ask a question about Prebid..." />
+        <button id="send-button">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Store the last request count for growth calculation
     let lastRequestCount = 0;
     let lastUniqueCompanies = 0;
+    let requestsData = [];
+    let currentView = 'member';
     
     // Initialize dashboard
     function initDashboard() {
@@ -606,27 +805,36 @@
           this.classList.add('active');
         });
       });
+      
+      // Initialize chat bot
+      initChatBot();
     }
     
     // Load requests from JSON file
     function loadRequests() {
+      document.getElementById('requests-spinner').style.display = 'block';
+      
       fetch('requests.json')
         .then(response => response.json())
         .then(data => {
-          window.requestsData = data;
+          requestsData = data;
           updateStats(data);
           renderRequests();
           document.getElementById('refresh-button').classList.remove('loading');
-          document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
+          document.getElementById('last-refresh').textContent = new Date().toLocaleString();
+          document.getElementById('requests-spinner').style.display = 'none';
         })
         .catch(error => {
           console.error('Error loading requests:', error);
           document.getElementById('refresh-button').classList.remove('loading');
-          
-          // For demo purposes - use sample data if requests.json fails
-          window.requestsData = getSampleData();
-          updateStats(window.requestsData);
-          renderRequests();
+          document.getElementById('requests-spinner').style.display = 'none';
+          document.getElementById('requests').innerHTML = `
+            <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef476f; margin-bottom: 1rem;"></i>
+              <h3>Failed to load requests</h3>
+              <p>Please try refreshing the page or check your connection</p>
+            </div>
+          `;
         });
     }
     
@@ -677,7 +885,7 @@
       const container = document.getElementById('requests');
       container.innerHTML = '';
       
-      const filtered = window.requestsData.filter(r => r.status === currentView);
+      const filtered = requestsData.filter(r => r.status === currentView);
       
       if (filtered.length === 0) {
         container.innerHTML = `
@@ -732,8 +940,6 @@
       }
     }
     
-    let currentView = 'member';
-    
     function showRequests(type) {
       currentView = type;
       document.querySelectorAll('.toggle-button').forEach(btn => btn.classList.remove('active'));
@@ -741,33 +947,94 @@
       renderRequests();
     }
     
-    // Sample data for demonstration
-    function getSampleData() {
-      const categories = ['Header Bidding', 'Video Ads', 'Analytics', 'Documentation', 'Bug Fix', 'Feature Request'];
-      const companies = ['AdTech Solutions', 'Global Media', 'Prebid Core Team', 'DataInsight', 'TechDocs Inc.', 'Performance Media', 'Digital Ad Co', 'Programmatic Partners'];
-      const authors = ['Sarah Johnson', 'Michael Chen', 'David Wilson', 'Emma Rodriguez', 'James Taylor', 'Linda Brown', 'Robert Garcia', 'Jennifer Lee'];
+    // Chat Bot Functionality
+    function initChatBot() {
+      const chatBot = document.getElementById('chat-bot');
+      const toggleChat = document.getElementById('toggle-chat');
+      const sendButton = document.getElementById('send-button');
+      const chatInput = document.getElementById('chat-input');
+      const chatMessages = document.getElementById('chat-messages');
       
-      const data = [];
-      const now = new Date();
+      // Toggle chat window
+      toggleChat.addEventListener('click', () => {
+        chatBot.classList.toggle('minimized');
+        toggleChat.classList.toggle('fa-minus');
+        toggleChat.classList.toggle('fa-expand');
+      });
       
-      // Generate 20 sample requests
-      for (let i = 1; i <= 20; i++) {
-        const isMember = Math.random() > 0.3;
-        const daysAgo = Math.floor(Math.random() * 14);
-        const timestamp = new Date(now - daysAgo * 24 * 60 * 60 * 1000);
-        
-        data.push({
-          title: `Request #${i}: Implement ${categories[Math.floor(Math.random() * categories.length)]}`,
-          url: `https://github.com/prebid/prebid.github.io/pull/12${i}`,
-          author: authors[Math.floor(Math.random() * authors.length)],
-          company: companies[Math.floor(Math.random() * companies.length)],
-          status: isMember ? 'member' : 'non-member',
-          category: categories[Math.floor(Math.random() * categories.length)],
-          timestamp: timestamp.toISOString()
+      // Send message on button click
+      sendButton.addEventListener('click', sendChat);
+      
+      // Send message on Enter key
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendChat();
+        }
+      });
+    }
+    
+    async function sendChat() {
+      const chatInput = document.getElementById('chat-input');
+      const message = chatInput.value.trim();
+      if (!message) return;
+      
+      const chatMessages = document.getElementById('chat-messages');
+      
+      // Add user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'message user-message';
+      userMessage.textContent = message;
+      chatMessages.appendChild(userMessage);
+      
+      // Clear input
+      chatInput.value = '';
+      
+      // Show typing indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'typing-indicator';
+      typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+      chatMessages.appendChild(typingIndicator);
+      
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      try {
+        // Send message to backend
+        const res = await fetch("https://routing-dashboard-backend.onrender.com/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
         });
+        
+        if (!res.ok) {
+          throw new Error('Failed to get response from server');
+        }
+        
+        const data = await res.json();
+        
+        // Remove typing indicator
+        typingIndicator.remove();
+        
+        // Add bot response
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot-message';
+        botMessage.textContent = data.reply;
+        chatMessages.appendChild(botMessage);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+      } catch (error) {
+        console.error('Chat error:', error);
+        typingIndicator.remove();
+        
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message bot-message';
+        errorMessage.textContent = "Sorry, I'm having trouble connecting to the chat service. Please try again later.";
+        chatMessages.appendChild(errorMessage);
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
       }
-      
-      return data;
     }
     
     // Initialize the dashboard when page loads
