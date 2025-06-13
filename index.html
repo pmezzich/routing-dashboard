@@ -1041,46 +1041,5 @@
     window.addEventListener('DOMContentLoaded', initDashboard);
   </script>
 
-<!-- Chatbot Widget Start -->
-<style>
-  #chatbot-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 28px;
-    cursor: pointer;
-    z-index: 1000;
-  }
-  #chatbot-frame {
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 350px;
-    height: 500px;
-    border: none;
-    display: none;
-    z-index: 1000;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  }
-</style>
-
-<button id="chatbot-button">💬</button>
-<iframe id="chatbot-frame" src="https://routing-dashboard-backend.onrender.com/chat"></iframe>
-
-<script>
-  const button = document.getElementById('chatbot-button');
-  const frame = document.getElementById('chatbot-frame');
-  button.onclick = () => {
-    frame.style.display = frame.style.display === 'none' ? 'block' : 'none';
-  };
-</script>
-<!-- Chatbot Widget End -->
-
 </body>
 </html>
