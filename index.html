@@ -1000,7 +1000,7 @@
       
       try {
         // Send message to backend
-        const res = await fetch("https://routing-dashboard-backend.onrender.com/chat", {
+        const res = await fetch("https://routing-dashboard-backend.onrender.com/query", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message })
